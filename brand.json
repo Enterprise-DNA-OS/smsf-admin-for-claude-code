@@ -1,10 +1,10 @@
 {
   "_": "Your business on every document and view. Change these and run `npm run docs` or `npm run view`.",
-  "business_name": "Your Business",
+  "business_name": "Harbourside SMSF Partners",
   "logo_path": "",
-  "primary": "#6654f5",
-  "accent": "#ca5a8b",
-  "ink": "#0b0c18",
+  "primary": "#14476b",
+  "accent": "#d08a2c",
+  "ink": "#101820",
   "paper": "#ffffff",
-  "footer_line": "Prepared with SMSF Admin for Claude Code."
+  "footer_line": "Harbourside SMSF Partners, Sydney. Prepared with SMSF Admin for Claude Code."
 }

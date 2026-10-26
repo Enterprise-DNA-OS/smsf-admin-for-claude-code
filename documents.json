@@ -1,11 +1,52 @@
 [
   {
-    "name": "example",
-    "title": "TODO(author): the first document this industry must produce",
-    "for_each": "select gen_random_uuid() as id, 'Example' as name",
-    "file": "name",
+    "name": "member-statement",
+    "title": "Member statement",
+    "for_each": "select m.id, f.code || ' ' || m.full_name as label from members m join funds f on f.id = m.fund_id where m.status = 'active' order by f.code, m.full_name",
+    "file": "label",
     "sections": [
-      { "title": "Details", "sql": "select 'replace me' as item, $1::text as record_id" }
+      { "title": "Member", "sql": "select b.member, f.name as fund, f.trustee_name as trustee, b.date_of_birth, b.age_now as age, case when b.retired then 'Retired' else 'Working' end as status from member_balances b join funds f on f.id = b.fund_id where b.member_id = $1" },
+      { "title": "Your balance this year", "note": "Earnings, tax and fees are added when the year's accounts are finished.", "sql": "select aud(opening_balance) as at_1_july, aud(inflows) as contributions_and_rollovers_in, aud(outflows) as pensions_and_withdrawals, aud(balance_now) as balance_so_far from member_balances where member_id = $1" },
+      { "title": "Contributions against the caps", "sql": "select fy as year, aud(concessional) as concessional, aud(concessional_cap) as concessional_cap, aud(concessional_room) as concessional_room, aud(non_concessional) as non_concessional, aud(ncc_room) as non_concessional_room from contribution_room where member_id = $1 order by fy desc" },
+      { "title": "Pensions", "sql": "select number as pension, kind, fy as year, aud(opening_balance) as balance, aud(minimum) as minimum, aud(maximum) as ttr_maximum, aud(paid) as paid, aud(left_to_pay) as left_to_pay from pension_status where member_id = $1 order by fy desc" },
+      { "title": "Transactions this year", "sql": "select txn_on as date, kind, coalesce(contribution_type, '') as type, aud(amount) as amount, description from transactions where member_id = $1 and fy_of(txn_on) = cur_fy() order by txn_on" }
+    ]
+  },
+  {
+    "name": "pension-letter",
+    "title": "Your pension this year",
+    "for_each": "select s.pension_id as id, s.fund || ' ' || s.member || ' ' || s.number as label from pension_status s where s.fy = cur_fy() and s.status = 'active' order by s.fund, s.number",
+    "file": "label",
+    "sections": [
+      { "title": "Pension", "sql": "select s.member, f.name as fund, s.number as pension, s.kind, s.commenced_on as started from pension_status s join funds f on f.id = s.fund_id where s.pension_id = $1 and s.fy = cur_fy()" },
+      { "title": "What must be paid by 30 June", "note": "The minimum is your account balance at 1 July times the factor for your age, rounded to the nearest $10. A transition to retirement pension can pay no more than 10% of the balance.", "sql": "select aud(opening_balance) as balance_at_1_july, age, percent || '%' as factor, aud(minimum) as minimum, aud(maximum) as maximum, aud(paid) as paid_so_far, aud(left_to_pay) as still_to_pay, fy_end(fy) as pay_by from pension_status where pension_id = $1 and fy = cur_fy()" },
+      { "title": "Payments so far", "sql": "select txn_on as date, aud(amount) as amount, description from transactions where pension_id = $1 and kind = 'pension' and fy_of(txn_on) = cur_fy() order by txn_on" }
+    ]
+  },
+  {
+    "name": "fund-summary",
+    "title": "Fund summary for the trustees",
+    "for_each": "select id, code || ' ' || name as label from funds where status = 'active' order by code",
+    "file": "label",
+    "sections": [
+      { "title": "The fund", "sql": "select f.name, f.trustee_name as trustee, f.abn, f.established_on, f.auditor, f.strategy_reviewed_on as strategy_last_reviewed from funds f where f.id = $1" },
+      { "title": "Members", "sql": "select member, age_now as age, aud(opening_balance) as at_1_july, aud(balance_now) as now from member_balances where fund_id = $1 order by member" },
+      { "title": "Investments", "sql": "select name as holding, asset_class, aud(market_value) as value, valued_on, case when in_house then 'in-house' when related_party then 'related party' else '' end as flags from investments where fund_id = $1 and sold_on is null order by market_value desc" },
+      { "title": "Asset mix", "sql": "select aud(total) as total, aud(cash) as cash, round(100 * cash / nullif(total, 0), 1) || '%' as cash_share, in_house_pct || '%' as in_house_share from fund_assets where fund_id = $1" },
+      { "title": "Pensions this year", "sql": "select number as pension, member, aud(minimum) as minimum, aud(paid) as paid, aud(left_to_pay) as left_to_pay from pension_status where fund_id = $1 and fy = cur_fy() order by number" }
+    ]
+  },
+  {
+    "name": "audit-pack",
+    "title": "Audit pack",
+    "for_each": "select j.id, f.code || ' ' || j.fy as label from jobs j join funds f on f.id = j.fund_id where j.stage <> 'lodged' order by f.code",
+    "file": "label",
+    "sections": [
+      { "title": "The job", "sql": "select fund, name, fy as year, stage, assigned, due_on as return_due, sent_to_auditor_on from job_board where job_id = $1" },
+      { "title": "Members at 1 July and contributions for the year", "sql": "select c.member, aud(c.concessional) as concessional, aud(c.non_concessional) as non_concessional, aud(c.concessional_room) as concessional_room, aud(c.ncc_room) as ncc_room from contribution_room c join jobs j on j.fund_id = c.fund_id and j.fy = c.fy where j.id = $1 order by c.member" },
+      { "title": "Pensions: minimum against paid", "sql": "select s.number as pension, s.member, aud(s.minimum) as minimum, aud(s.maximum) as ttr_maximum, aud(s.paid) as paid from pension_status s join jobs j on j.fund_id = s.fund_id and j.fy = s.fy where j.id = $1 order by s.number" },
+      { "title": "Investments and their 30 June values", "sql": "select i.name as holding, i.asset_class, aud(i.market_value) as value, i.valued_on, i.valuation_basis, case when i.valued_on >= fy_end(j.fy) then 'yes' else 'NO' end as at_30_june, case when i.in_house then 'in-house' when i.related_party then 'related party' else '' end as flags from investments i join jobs j on j.fund_id = i.fund_id where j.id = $1 and i.sold_on is null order by i.market_value desc" },
+      { "title": "Audit queries", "sql": "select number, raised_on, status, waiting_on, question, answer from audit_queries where job_id = $1 order by number" }
     ]
   }
 ]

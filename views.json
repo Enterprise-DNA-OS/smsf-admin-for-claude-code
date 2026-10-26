@@ -2,12 +2,59 @@
   {
     "name": "week",
     "title": "This week",
-    "subtitle": "SMSF Admin for Claude Code: what needs attention, rendered by npm run view",
+    "subtitle": "SMSF Admin for Claude Code: pensions, caps, jobs and the audit, rendered by npm run view",
     "sections": [
       {
-        "title": "Needs attention",
-        "note": "TODO(author): point this at the industry's attention view (overdue, stuck, quiet).",
-        "sql": "select 'replace me' as item, 'TODO(author)' as why"
+        "title": "Pensions behind on this year's minimum",
+        "note": "Nothing paid yet, or less than the year so far calls for.",
+        "sql": "select fund, number as pension, member, aud(minimum) as minimum, aud(paid) as paid, aud(left_to_pay) as left_to_pay, days_left as days_to_30_june from pension_status where fy = cur_fy() and left_to_pay > 0 and paid < minimum * greatest(0, (current_date - fy_start(fy))::numeric / 365 - 1.0 / 12) order by left_to_pay desc"
+      },
+      {
+        "title": "Members over or near a contribution cap",
+        "sql": "select fund, member, aud(concessional) as concessional, aud(concessional_room) as concessional_room, aud(non_concessional) as non_concessional, aud(ncc_room) as ncc_room from contribution_room where fy = cur_fy() and (concessional_room < 5000 or ncc_room < 0) order by concessional_room"
+      },
+      {
+        "title": "Jobs late, stuck or close to their lodgment date",
+        "sql": "select fund, fy, stage, days_in_stage, assigned, due_on, days_to_due, open_queries from job_board where stage <> 'lodged' and (days_to_due < 45 or days_in_stage > 21) order by days_to_due"
+      },
+      {
+        "title": "Audit queries open",
+        "sql": "select q.number, b.fund, q.waiting_on, current_date - q.raised_on as days_open, q.question from audit_queries q join job_board b on b.job_id = q.job_id where q.status = 'open' order by q.raised_on"
+      },
+      {
+        "title": "Bank lines to code",
+        "sql": "select f.code as fund, t.txn_on, aud(t.amount) as amount, t.description from transactions t join funds f on f.id = t.fund_id where t.kind = 'uncoded' order by t.txn_on"
+      }
+    ]
+  },
+  {
+    "name": "pensions",
+    "title": "Pensions",
+    "subtitle": "This year's minimums, the TTR maximum and what has been paid",
+    "sections": [
+      {
+        "title": "This year",
+        "sql": "select fund, number as pension, member, kind, age, percent || '%' as factor, aud(opening_balance) as balance, aud(minimum) as minimum, aud(maximum) as ttr_maximum, aud(paid) as paid, aud(left_to_pay) as left_to_pay, last_paid_on from pension_status where fy = cur_fy() order by fund, number"
+      },
+      {
+        "title": "Last year",
+        "note": "Any line with something left to pay did not meet the pension standards for the year.",
+        "sql": "select fund, number as pension, member, aud(minimum) as minimum, aud(paid) as paid, aud(left_to_pay) as short_by from pension_status where fy = fy_shift(cur_fy(), -1) order by left_to_pay desc"
+      }
+    ]
+  },
+  {
+    "name": "jobs",
+    "title": "The job board",
+    "subtitle": "Last year's work on every fund, from records request to lodgment",
+    "sections": [
+      {
+        "title": "By stage",
+        "sql": "select stage, count(*) as funds, sum(open_queries) as open_queries, aud(sum(fee)) as fees from job_board where fy = fy_shift(cur_fy(), -1) group by stage order by array_position(array['not-started','records-requested','records-in','in-progress','review','with-auditor','audit-queries','signed','lodged'], stage)"
+      },
+      {
+        "title": "Every job",
+        "sql": "select fund, name, stage, days_in_stage, assigned, due_on, days_to_due, open_queries, hours, aud(fee) as fee, aud(margin) as margin from job_board where fy = fy_shift(cur_fy(), -1) order by due_on"
       }
     ]
   }

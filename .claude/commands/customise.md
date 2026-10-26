@@ -2,7 +2,7 @@
 description: Make this system yours in plain language. Add a field, rename stages, change a rule, add a column to a document. Writes the migration, applies it, updates the commands that touch it.
 ---
 
-The operator will describe a change in their own words, for example "add a PO number to every order", "our stages are Enquiry, Site Visit, Quoted, Booked, Done", "invoices are due in 14 days not 20", "put the account manager on the client statement".
+The operator will describe a change in their own words, for example "add the adviser's name to every fund", "our job stages are Records, Prepared, Reviewed, Audit, Lodged", "flag members within $10,000 of the cap, not $5,000", "put the trustee's address on the member statement".
 
 1. Read `CLAUDE.md`, the current schema in `supabase/migrations/`, and any command or document that touches the thing being changed. Say back in one line what you are about to change and where.
 2. Write the next numbered migration in `supabase/migrations/` (never edit an applied one). Keep names plain and lowercase. Default new columns sensibly so existing rows stay valid.

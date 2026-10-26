@@ -7,18 +7,20 @@ That layer used to be the whole product, because talking to a database was hard.
 ## What you gain
 
 - **Better answers.** A dashboard shows what the vendor decided to chart. Here you ask your own question, in your own words, and get it answered against your own data.
-- **No seats.** Everyone who needs to look can look. The bill does not grow with headcount.
+- **No per-fund fee.** Take on another fund and the bill does not move. Everyone in the practice who needs to look can look.
 - **Your data in your Postgres.** Plain tables. Back them up, query them from anything, leave any time. There is no export step because there is nothing to leave.
 - **A process that matches you.** When your way of working changes, you add a command. You do not wait for a feature request to clear.
 
 ## What you give up
 
-- **A visual board.** Stages are a table you ask about, not cards you drag.
+- **A visual board.** Job stages are a table you ask about, not cards you drag.
+- **Bank and share feeds out of the box.** Statements come in as CSV until a feed is connected.
+- **The tax return and the financial statements.** You keep lodging from your existing tax software.
 - **A phone app.** It runs where Claude Code runs.
 - **A vendor help desk.** This is open source. Enterprise DNA supports the installed version for businesses that want someone to call.
 
 ## Who this fits
 
-Small teams who already use Claude Code, or who would rather learn to ask than learn another interface. If your team needs a screen to look at all day, keep Simple Fund 360. If you need the answers more than the screens, this is cheaper, faster and yours.
+Small teams who already use Claude Code, or who would rather learn to ask than learn another interface. If your team lives in the Simple Fund 360 screens all day, keep it. If you need the answers more than the screens, this is cheaper, faster and yours.
 
 Installed and run for you: https://enterprisedna.co/omni/instead-of/simple-fund-360
